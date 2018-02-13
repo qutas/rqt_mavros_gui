@@ -1,0 +1,20 @@
+<library path="src">
+  <class name="MAVROS GUI" type="rqt_mavros_gui.mavros_gui.MAVROSGUI" base_class_type="rqt_gui_py::Plugin">
+    <description>
+      A Python-based GUI to assist with everyday MAVROS commands
+    </description>
+    <qtgui>
+      <!-- optional grouping...
+      <group>
+        <label>Group</label>
+      </group>
+      <group>
+        <label>Subgroup</label>
+      </group>
+      -->
+      <label>MAVROS GUI</label>
+      <icon type="theme">system-help</icon>
+      <statustip>MAVROS panel for easily issuing commands</statustip>
+    </qtgui>
+  </class>
+</library>
