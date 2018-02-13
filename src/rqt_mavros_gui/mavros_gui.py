@@ -56,7 +56,7 @@ class MAVROSGUI(Plugin):
 		self._widget.button_param_set.clicked.connect(self.button_param_set_pressed)
 		self._widget.button_update_namespace.clicked.connect(self.button_update_namespace_pressed)
 
-		self._widget.button_safety_arm.currentIndexChanged.connect(self.combo_param_list_pressed)
+		self._widget.combo_param_list.currentIndexChanged.connect(self.combo_param_list_pressed)
 
 		#mavros.set_namespace("/mavros")
 		self.update_namespace()
@@ -80,37 +80,48 @@ class MAVROSGUI(Plugin):
 		# Usually used to open a modal configuration dialog
 
 	def button_safety_arm_pressed(self):
-		_arm(True)
+		self._arm(True)
 		rospy.loginfo("DEBUG: Safety arm button pressed!")
 
 	def button_safety_disarm_pressed(self):
-		_arm(False)
+		self._arm(False)
 		rospy.loginfo("DEBUG: Safety disarm button pressed!")
 
 	def button_param_refresh_pressed(self):
 		param_received, param_list = param_get_all(False)
-		rospy.loginfo("Parameters received:", param_received)
+		rospy.loginfo("Parameters received: %s" % str(param_received))
 		rospy.loginfo("DEBUG: Refresh params button pressed!")
 
 		self._widget.combo_param_list.clear()
-		for p in sorted(param_list):
+		param_id_list = list()
+		for p in param_list:
+			param_id_list.append(p.param_id)
+
+		for p in sorted(param_id_list):
 			self._widget.combo_param_list.addItem(p)
 
 	def button_param_set_pressed(self):
-		param_id = self._widget.combo_param_list.currentText()
-		val_str = self._widget.textbox_param_value.text()
+		param_id = str(self._widget.combo_param_list.currentText())
+		val_str = str(self._widget.textbox_param_value.text())
 
 		if '.' in val_str:
 			val = float(val_str)
 		else:
 			val = int(val_str)
+		try:
+			rospy.loginfo(param_set(param_id, val))
+		except IOError as e:
+			rospy.logerr(e)
 
-		rospy.loginfo(param_set(param_id, val_str))
 		rospy.loginfo("DEBUG: Set param button pressed!")
 
 	def combo_param_list_pressed(self,):
 		param_id = self._widget.combo_param_list.currentText()
-		self._widget.textbox_param_value.setText(param_get(param_id))
+
+		if param_id:
+			self._widget.textbox_param_value.setText(str(param_get(param_id)))
+		else:
+			self._widget.textbox_param_value.setText("")
 
 	def button_update_namespace_pressed(self):
 		self.update_namespace()
@@ -119,13 +130,13 @@ class MAVROSGUI(Plugin):
 	def _arm(self,state):
 		try:
 			ret = command.arming(value=state)
+
+			if not ret.success:
+				rospy.logerr("Request failed. Check mavros logs")
+
+			rospy.loginfo("Command result: %s" % str(ret.result))
 		except rospy.ServiceException as ex:
 			rospy.logerr(ex)
-
-		if not ret.success:
-			rospy.logerr("Request failed. Check mavros logs")
-
-		rospy.loginfo("Command result:", ret.result)
 
 	def update_namespace(self):
 		ns = self._widget.textbox_namespace.text()
