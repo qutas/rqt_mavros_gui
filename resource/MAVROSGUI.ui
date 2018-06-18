@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>260</width>
-    <height>280</height>
+    <height>350</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -19,28 +19,12 @@
   <property name="minimumSize">
    <size>
     <width>260</width>
-    <height>280</height>
+    <height>350</height>
    </size>
   </property>
   <property name="windowTitle">
    <string>MAVROS GUI</string>
   </property>
-  <widget class="QPushButton" name="button_safety_arm">
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>220</y>
-     <width>120</width>
-     <height>50</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Arm</string>
-   </property>
-  </widget>
   <widget class="QLabel" name="label_title">
    <property name="geometry">
     <rect>
@@ -61,22 +45,6 @@
    </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="button_safety_disarm">
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
-   <property name="geometry">
-    <rect>
-     <x>130</x>
-     <y>220</y>
-     <width>120</width>
-     <height>50</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Disarm</string>
    </property>
   </widget>
   <widget class="QPushButton" name="button_update_namespace">
@@ -130,7 +98,7 @@
     </font>
    </property>
    <property name="text">
-    <string>Arming</string>
+    <string>Flight Mode</string>
    </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>
@@ -258,6 +226,89 @@
      <width>120</width>
      <height>30</height>
     </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="label_arming_2">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>260</y>
+     <width>241</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>Arming</string>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="button_safety_arm">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>290</y>
+     <width>120</width>
+     <height>50</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Arm</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="button_safety_disarm">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>130</x>
+     <y>290</y>
+     <width>120</width>
+     <height>50</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Disarm</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="button_flight_mode_set">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>130</x>
+     <y>220</y>
+     <width>120</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Set</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="combo_flight_mode_list">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>220</y>
+     <width>120</width>
+     <height>30</height>
+    </rect>
+   </property>
+   <property name="editable">
+    <bool>false</bool>
    </property>
   </widget>
  </widget>

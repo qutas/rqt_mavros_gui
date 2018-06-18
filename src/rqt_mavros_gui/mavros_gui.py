@@ -8,6 +8,7 @@ from python_qt_binding import loadUi
 from python_qt_binding.QtWidgets import QWidget
 
 import mavros
+from mavros_msgs.srv import SetMode
 from mavros.utils import *
 from mavros.param import *
 from mavros import command
@@ -54,9 +55,28 @@ class MAVROSGUI(Plugin):
 		self._widget.button_safety_disarm.clicked.connect(self.button_safety_disarm_pressed)
 		self._widget.button_param_refresh.clicked.connect(self.button_param_refresh_pressed)
 		self._widget.button_param_set.clicked.connect(self.button_param_set_pressed)
+		self._widget.button_flight_mode_set.clicked.connect(self.button_flight_mode_set_pressed)
 		self._widget.button_update_namespace.clicked.connect(self.button_update_namespace_pressed)
 
 		self._widget.combo_param_list.currentIndexChanged.connect(self.combo_param_list_pressed)
+
+		flight_modes = ["MANUAL",
+						"ACRO",
+						"ALTCTL",
+						"POSCTL",
+						"OFFBOARD",
+						"STABILIZED",
+						"RATTITUDE",
+						"AUTO.MISSION",
+						"AUTO.LOITER",
+						"AUTO.RTL",
+						"AUTO.LAND",
+						"AUTO.RTGS",
+						"AUTO.READY",
+						"AUTO.TAKEOFF"]
+
+		for fm in sorted(flight_modes):
+			self._widget.combo_flight_mode_list.addItem(fm)
 
 		#mavros.set_namespace("/mavros")
 		self.update_namespace()
@@ -81,16 +101,15 @@ class MAVROSGUI(Plugin):
 
 	def button_safety_arm_pressed(self):
 		self._arm(True)
-		rospy.loginfo("DEBUG: Safety arm button pressed!")
+		rospy.logdebug("Safety arm button pressed!")
 
 	def button_safety_disarm_pressed(self):
 		self._arm(False)
-		rospy.loginfo("DEBUG: Safety disarm button pressed!")
+		rospy.logdebug("Safety disarm button pressed!")
 
 	def button_param_refresh_pressed(self):
 		param_received, param_list = param_get_all(False)
-		rospy.loginfo("Parameters received: %s" % str(param_received))
-		rospy.loginfo("DEBUG: Refresh params button pressed!")
+		rospy.logdebug("Parameters received: %s" % str(param_received))
 
 		self._widget.combo_param_list.clear()
 		param_id_list = list()
@@ -108,12 +127,27 @@ class MAVROSGUI(Plugin):
 			val = float(val_str)
 		else:
 			val = int(val_str)
+
 		try:
 			rospy.loginfo(param_set(param_id, val))
 		except IOError as e:
 			rospy.logerr(e)
 
-		rospy.loginfo("DEBUG: Set param button pressed!")
+		rospy.logdebug("Set param button pressed!")
+
+	def button_flight_mode_set_pressed(self):
+		mode_req = str(self._widget.combo_flight_mode_list.currentText())
+
+		try:
+			set_mode = rospy.ServiceProxy(mavros.get_topic('set_mode'), SetMode)
+			ret = set_mode(base_mode=0, custom_mode=mode_req)
+
+			if not ret.mode_sent:
+				rospy.logerr("Request failed. Check mavros logs")
+		except rospy.ServiceException as e:
+			rospy.logerr(e)
+
+		rospy.logdebug("Set param button pressed!")
 
 	def combo_param_list_pressed(self,):
 		param_id = self._widget.combo_param_list.currentText()
@@ -125,7 +159,7 @@ class MAVROSGUI(Plugin):
 
 	def button_update_namespace_pressed(self):
 		self.update_namespace()
-		rospy.loginfo("DEBUG: Update namespace button pressed!")
+		rospy.logdebug("Update namespace button pressed!")
 
 	def _arm(self,state):
 		try:
