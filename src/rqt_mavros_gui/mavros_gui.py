@@ -60,6 +60,8 @@ class MAVROSGUI(Plugin):
 
 		self._widget.combo_param_list.currentIndexChanged.connect(self.combo_param_list_pressed)
 
+		self._widget.button_mixer_set.clicked.connect(self.button_mixer_set_pressed)
+
 		flight_modes = ["MANUAL",
 						"ACRO",
 						"ALTCTL",
@@ -108,16 +110,22 @@ class MAVROSGUI(Plugin):
 		rospy.logdebug("Safety disarm button pressed!")
 
 	def button_param_refresh_pressed(self):
-		param_received, param_list = param_get_all(False)
-		rospy.logdebug("Parameters received: %s" % str(param_received))
+		param_received = 0
+
+		try:
+			param_received, param_list = param_get_all(False)
+			rospy.logdebug("Parameters received: %s" % str(param_received))
+		except IOError as e:
+			rospy.logerr(e)
 
 		self._widget.combo_param_list.clear()
 		param_id_list = list()
-		for p in param_list:
-			param_id_list.append(p.param_id)
+		if param_received > 0:
+			for p in param_list:
+				param_id_list.append(p.param_id)
 
-		for p in sorted(param_id_list):
-			self._widget.combo_param_list.addItem(p)
+			for p in sorted(param_id_list):
+				self._widget.combo_param_list.addItem(p)
 
 	def button_param_set_pressed(self):
 		param_id = str(self._widget.combo_param_list.currentText())
@@ -135,6 +143,27 @@ class MAVROSGUI(Plugin):
 
 		rospy.logdebug("Set param button pressed!")
 
+	def button_mixer_set_pressed(self):
+		param_id = "SYS_AUTOSTART"
+		mixer_str = str(self._widget.combo_mixer_list.currentText())
+		mixer_val = 0;
+
+		if mixer_str == "Generic Plane":
+			mixer_val = 2100
+		elif mixer_str == "Quadrotor x4":
+			mixer_val = 4001
+		elif mixer_str == "Quadrotor +4":
+			mixer_val = 5001
+		elif mixer_str == "Hexarotor x4":
+			mixer_val = 6001
+
+		try:
+			rospy.loginfo(param_set(param_id, mixer_val))
+		except IOError as e:
+			rospy.logerr(e)
+
+		rospy.logdebug("Set param button pressed!")
+
 	def button_flight_mode_set_pressed(self):
 		mode_req = str(self._widget.combo_flight_mode_list.currentText())
 
@@ -144,18 +173,20 @@ class MAVROSGUI(Plugin):
 
 			if not ret.mode_sent:
 				rospy.logerr("Request failed. Check mavros logs")
-		except rospy.ServiceException as e:
+		except (rospy.ServiceException, IOError) as e:
 			rospy.logerr(e)
 
 		rospy.logdebug("Set param button pressed!")
 
 	def combo_param_list_pressed(self,):
 		param_id = self._widget.combo_param_list.currentText()
-
-		if param_id:
-			self._widget.textbox_param_value.setText(str(param_get(param_id)))
-		else:
-			self._widget.textbox_param_value.setText("")
+		try:
+			if param_id:
+				self._widget.textbox_param_value.setText(str(param_get(param_id)))
+			else:
+				self._widget.textbox_param_value.setText("")
+		except IOError as e:
+			rospy.logerr(e)
 
 	def button_update_namespace_pressed(self):
 		self.update_namespace()
