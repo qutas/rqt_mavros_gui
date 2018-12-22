@@ -89,12 +89,13 @@ class MAVROSGUI(Plugin):
 	def save_settings(self, plugin_settings, instance_settings):
 		# TODO save intrinsic configuration, usually using:
 		# instance_settings.set_value(k, v)
-		pass
+		instance_settings.set_value('namespace', self._widget.textbox_namespace.text())
 
 	def restore_settings(self, plugin_settings, instance_settings):
 		# TODO restore intrinsic configuration, usually using:
 		# v = instance_settings.value(k)
-		pass
+		self._widget.textbox_namespace.setText(instance_settings.value('namespace'))
+		self.update_namespace()
 
 	#def trigger_configuration(self):
 		# Comment in to signal that the plugin has a way to configure
