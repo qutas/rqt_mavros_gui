@@ -62,7 +62,7 @@ class MAVROSGUI(Plugin):
 
 		self._widget.button_mixer_set.clicked.connect(self.button_mixer_set_pressed)
 
-		flight_modes = ["MANUAL",
+		self.flight_modes = sorted(["MANUAL",
 						"ACRO",
 						"ALTCTL",
 						"POSCTL",
@@ -75,9 +75,9 @@ class MAVROSGUI(Plugin):
 						"AUTO.LAND",
 						"AUTO.RTGS",
 						"AUTO.READY",
-						"AUTO.TAKEOFF"]
+						"AUTO.TAKEOFF"])
 
-		for fm in sorted(flight_modes):
+		for fm in self.flight_modes:
 			self._widget.combo_flight_mode_list.addItem(fm)
 
 		#mavros.set_namespace("/mavros")
@@ -90,12 +90,19 @@ class MAVROSGUI(Plugin):
 		# TODO save intrinsic configuration, usually using:
 		# instance_settings.set_value(k, v)
 		instance_settings.set_value('namespace', self._widget.textbox_namespace.text())
+		instance_settings.set_value('mode_selection', self._widget.combo_flight_mode_list.currentText())
 
 	def restore_settings(self, plugin_settings, instance_settings):
 		# TODO restore intrinsic configuration, usually using:
 		# v = instance_settings.value(k)
 		self._widget.textbox_namespace.setText(instance_settings.value('namespace'))
 		self.update_namespace()
+
+		mode = str(instance_settings.value('mode_selection'))
+		if mode in self.flight_modes:
+			self._widget.combo_flight_mode_list.setCurrentIndex(self.flight_modes.index(mode))
+
+
 
 	#def trigger_configuration(self):
 		# Comment in to signal that the plugin has a way to configure
