@@ -8,8 +8,8 @@ project(rqt_mavros_gui)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  mavros
-  mavros_msgs
+#  mavros
+#  mavros_msgs
   rospy
   rqt_gui
   rqt_gui_py
