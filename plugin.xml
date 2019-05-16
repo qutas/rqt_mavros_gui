@@ -4,17 +4,14 @@
       A Python-based GUI to assist with everyday MAVROS commands
     </description>
     <qtgui>
-      <!-- optional grouping...
       <group>
-        <label>Group</label>
+        <label>QUTAS Tools</label>
+        <icon type="theme">folder</icon>
+        <statustip>Plugins developed as part of the QUTAS Flight Stack.</statustip>
       </group>
-      <group>
-        <label>Subgroup</label>
-      </group>
-      -->
       <label>MAVROS GUI</label>
       <icon type="theme">system-help</icon>
-      <statustip>MAVROS panel for easily issuing commands</statustip>
+      <statustip>MAVROS panel for easily issuing commands.</statustip>
     </qtgui>
   </class>
 </library>
