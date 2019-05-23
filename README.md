@@ -1,6 +1,8 @@
 # rqt_mavros_gui
 An RQT interface for useful MAVROS commands
 
+![Screenshot](/resource/screenshot.png)
+
 ## Download & Compile
 ```sh
 cd ~/catkin_ws/src
