@@ -258,9 +258,23 @@
     <rect>
      <x>10</x>
      <y>360</y>
-     <width>120</width>
+     <width>111</width>
      <height>50</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>16</pointsize>
+    </font>
+   </property>
+   <property name="autoFillBackground">
+    <bool>false</bool>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QPushButton{
+	color: rgb(255, 255, 255);
+	background-color: rgb(25, 116, 2);
+}</string>
    </property>
    <property name="text">
     <string>Arm</string>
@@ -272,11 +286,22 @@
    </property>
    <property name="geometry">
     <rect>
-     <x>130</x>
+     <x>139</x>
      <y>360</y>
-     <width>120</width>
+     <width>111</width>
      <height>50</height>
     </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>16</pointsize>
+    </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QPushButton{
+	color: rgb(255,255,255);
+	background-color: rgb(116,2,25);
+}</string>
    </property>
    <property name="text">
     <string>Disarm</string>
