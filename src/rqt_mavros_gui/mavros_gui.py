@@ -95,7 +95,8 @@ class MAVROSGUI(Plugin):
 	def restore_settings(self, plugin_settings, instance_settings):
 		# TODO restore intrinsic configuration, usually using:
 		# v = instance_settings.value(k)
-		ns = instance_settings.value('namespace')
+		ns = str(instance_settings.value('namespace'))
+
 		if ns:
 			self._widget.textbox_namespace.setText(ns)
 
