@@ -7,8 +7,11 @@ from qt_gui.plugin import Plugin
 from python_qt_binding import loadUi
 from python_qt_binding.QtWidgets import QWidget
 
+from rqt_mavros_gui.mavros_gui_options import SimpleSettingsDialog
+
 import mavros
 from mavros_msgs.srv import SetMode
+from mavros_msgs.msg import State
 from mavros.utils import *
 from mavros.param import *
 from mavros import command
@@ -51,16 +54,15 @@ class MAVROSGUI(Plugin):
 		# Add widget to the user interface
 		context.add_widget(self._widget)
 
+		self.mavros_namespace = "/mavros"
+
 		self._widget.button_safety_arm.clicked.connect(self.button_safety_arm_pressed)
 		self._widget.button_safety_disarm.clicked.connect(self.button_safety_disarm_pressed)
 		self._widget.button_param_refresh.clicked.connect(self.button_param_refresh_pressed)
 		self._widget.button_param_set.clicked.connect(self.button_param_set_pressed)
 		self._widget.button_flight_mode_set.clicked.connect(self.button_flight_mode_set_pressed)
-		self._widget.button_update_namespace.clicked.connect(self.button_update_namespace_pressed)
 
 		self._widget.combo_param_list.currentIndexChanged.connect(self.combo_param_list_pressed)
-
-		self._widget.button_mixer_set.clicked.connect(self.button_mixer_set_pressed)
 
 		self.flight_modes = sorted(["MANUAL",
 						"ACRO",
@@ -80,38 +82,53 @@ class MAVROSGUI(Plugin):
 		for fm in self.flight_modes:
 			self._widget.combo_flight_mode_list.addItem(fm)
 
-		#mavros.set_namespace("/mavros")
-		self.update_namespace()
+		# Handled in the restore settings callback
+		#self.refresh_mavros_backend()
+
+		self.sub_state = None
+		self.timer_state = None
+		self.msg_state_last = rospy.Time(0)
 
 	def shutdown_plugin(self):
-		pass
+		if self.sub_state:
+			self.sub_state.unregister()
+
+		if self.timer_state:
+			self.timer_state.shutdown()
 
 	def save_settings(self, plugin_settings, instance_settings):
-		# TODO save intrinsic configuration, usually using:
-		# instance_settings.set_value(k, v)
-		instance_settings.set_value('namespace', self._widget.textbox_namespace.text())
+		instance_settings.set_value('namespace', self.mavros_namespace)
 		instance_settings.set_value('mode_selection', self._widget.combo_flight_mode_list.currentText())
 
 	def restore_settings(self, plugin_settings, instance_settings):
-		# TODO restore intrinsic configuration, usually using:
-		# v = instance_settings.value(k)
-		ns = str(instance_settings.value('namespace'))
-
+		ns = instance_settings.value('namespace')
 		if ns:
-			self._widget.textbox_namespace.setText(ns)
-
-		self.update_namespace()
+			self.mavros_namespace = str(ns)
 
 		mode = str(instance_settings.value('mode_selection'))
 		if mode in self.flight_modes:
 			self._widget.combo_flight_mode_list.setCurrentIndex(self.flight_modes.index(mode))
 
+		self._refresh_mavros_backend()
 
+	def trigger_configuration(self):
+		"""Present the user with a dialog for choosing the topic to view,
+		the data type, and other settings used to generate the HUD.
+		This displays a SimpleSettingsDialog asking the user to choose
+		the settings as desired.
 
-	#def trigger_configuration(self):
-		# Comment in to signal that the plugin has a way to configure
-		# This will enable a setting button (gear icon) in each dock widget title bar
-		# Usually used to open a modal configuration dialog
+		This method is blocking"""
+
+		dialog = SimpleSettingsDialog(title='Quaternion View Options')
+		dialog.add_lineedit("namespace", str(self.mavros_namespace), "Namespace")
+
+		settings = dialog.get_settings();
+		if settings is not None:
+			for s in settings:
+				if s[0] == "namespace":
+					self.mavros_namespace = str(s[1])
+
+		self._refresh_mavros_backend()
 
 	def button_safety_arm_pressed(self):
 		self._arm(True)
@@ -123,7 +140,6 @@ class MAVROSGUI(Plugin):
 
 	def button_param_refresh_pressed(self):
 		param_received = 0
-
 		try:
 			param_received, param_list = param_get_all(False)
 			rospy.logdebug("Parameters received: %s" % str(param_received))
@@ -133,6 +149,9 @@ class MAVROSGUI(Plugin):
 		self._widget.combo_param_list.clear()
 		param_id_list = list()
 		if param_received > 0:
+			self._widget.textbox_param_value.setEnabled(True)
+			self._widget.button_param_set.setEnabled(True)
+
 			for p in param_list:
 				param_id_list.append(p.param_id)
 
@@ -150,27 +169,6 @@ class MAVROSGUI(Plugin):
 
 		try:
 			rospy.loginfo(param_set(param_id, val))
-		except IOError as e:
-			rospy.logerr(e)
-
-		rospy.logdebug("Set param button pressed!")
-
-	def button_mixer_set_pressed(self):
-		param_id = "SYS_AUTOSTART"
-		mixer_str = str(self._widget.combo_mixer_list.currentText())
-		mixer_val = 0;
-
-		if mixer_str == "Generic Plane":
-			mixer_val = 2100
-		elif mixer_str == "Quadrotor x4":
-			mixer_val = 4001
-		elif mixer_str == "Quadrotor +4":
-			mixer_val = 5001
-		elif mixer_str == "Hexarotor x4":
-			mixer_val = 6001
-
-		try:
-			rospy.loginfo(param_set(param_id, mixer_val))
 		except IOError as e:
 			rospy.logerr(e)
 
@@ -200,10 +198,6 @@ class MAVROSGUI(Plugin):
 		except IOError as e:
 			rospy.logerr(e)
 
-	def button_update_namespace_pressed(self):
-		self.update_namespace()
-		rospy.logdebug("Update namespace button pressed!")
-
 	def _arm(self,state):
 		try:
 			ret = command.arming(value=state)
@@ -215,8 +209,45 @@ class MAVROSGUI(Plugin):
 		except rospy.ServiceException as ex:
 			rospy.logerr(ex)
 
-	def update_namespace(self):
-		ns = self._widget.textbox_namespace.text()
-		mavros.set_namespace(ns)
+	def _cb_state(self, msg_in):
+		self.msg_state_last = rospy.Time.now()
 
+		if msg_in.connected:
+			self._widget.label_status_live_conn.setText("Connected")
+		else:
+			self._widget.label_status_live_conn.setText("Disconnected")
+
+		if msg_in.armed:
+			self._widget.label_status_live_armed.setText("Armed")
+			self._widget.label_status_live_armed.setStyleSheet("QLabel{color: rgb(255, 255, 255);background-color: rgb(25, 116, 2);}")
+		else:
+			self._widget.label_status_live_armed.setText("Disarmed")
+			self._widget.label_status_live_armed.setStyleSheet("QLabel{color: rgb(255, 255, 255);background-color: rgb(116,2,25);}")
+
+		if msg_in.mode == "CMODE(0)":
+			self._widget.label_status_live_mode.setText("UNKNOWN")
+		else:
+			self._widget.label_status_live_mode.setText(msg_in.mode)
+
+	def _state_monitor(self, event):
+		if self.msg_state_last != rospy.Time(0):
+			if (event.current_real - self.msg_state_last) > rospy.Duration(5):
+				self.msg_state_last = rospy.Time(0)
+				self._widget.label_status_live_conn.setText("Disconnected")
+				self._widget.label_status_live_armed.setText("Disconnected")
+				self._widget.label_status_live_armed.setStyleSheet("")
+				self._widget.label_status_live_mode.setText("Disconnected")
+
+	def _refresh_mavros_backend(self):
+		mavros.set_namespace(self.mavros_namespace)
+
+		if self.sub_state:
+			self.sub_state.unregister()
+
+		if self.timer_state:
+			self.timer_state.shutdown()
+
+		#Timer should trigger immidiately
+		self.timer_state = rospy.Timer(rospy.Duration(1), self._state_monitor)
+		self.sub_state = rospy.Subscriber(self.mavros_namespace + "/state", State, self._cb_state)
 
